@@ -1,0 +1,14 @@
+{
+  "hugtest": {
+    "file_name": "hugtest.json"
+  },
+  "detoxtest": {
+    "file_name": "detoxtest.json"
+  },
+  "paratest": {
+    "file_name": "paratest_671.json"
+  },
+  "sft_train": {
+    "file_name": "sft_train_para_data.json"
+  }
+}
