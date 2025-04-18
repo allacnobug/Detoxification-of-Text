@@ -30,6 +30,7 @@ pip install -e '.[torch,metrics]'
 详细配置可参考：[文档链接](https://zhuanlan.zhihu.com/p/695287607)
 
 你也可以直接使用我们提供的llama_factory.yml进行环境部署
+
 ---
 ### 第2步：模型准备
 
@@ -312,8 +313,11 @@ python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 ## 参考及数据集来源
 
 [Paradetox](https://github.com/s-nlp/paradetox/tree/main)
+
 [Detoxllm](https://huggingface.co/UBC-NLP/DetoxLLM-7B)
+
 [Huggingface Dataset](https://huggingface.co/datasets/narySt/text_detoxification_dataset)
+
 [You Only Prompt Once](https://github.com/xinleihe/toxic-prompt#)
 
 ## 联系我
