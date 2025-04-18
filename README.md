@@ -29,9 +29,50 @@ pip install -e '.[torch,metrics]'
 
 详细配置可参考：[文档链接](https://zhuanlan.zhihu.com/p/695287607)
 
+你也可以直接使用我们提供的llama_factory.yml进行环境部署
 ---
+### 第2步：模型准备
 
-### 第2步：开始去毒
+下载[LLaMa3-8B](https://huggingface.co/meta-llama/Meta-Llama-3-8B)到本地```model_and_adpter```文件夹
+
+运行以下代码进行合并(在llama_factory环境)
+
+```python
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# 模型路径配置
+base_model_name = "model_and_adpter/Llama3-8B-Instruct"
+adapter_model_name = "model_and_adpter/sft_adapter"
+output_dir = "model_and_adpter/sft_model"
+
+# 加载基础模型和tokenizer
+print("正在加载基础模型...")
+model = AutoModelForCausalLM.from_pretrained(
+    base_model_name,
+    device_map="auto"
+)
+
+print("正在加载tokenizer...")
+tokenizer = AutoTokenizer.from_pretrained(adapter_model_name)
+
+# 加载适配器
+print("正在合并适配器...")
+model = PeftModel.from_pretrained(model, adapter_model_name)
+
+# 合并模型参数
+print("开始模型融合...")
+model = model.merge_and_unload()
+
+# 保存完整模型
+print(f"保存完整模型到 {output_dir}...")
+model.save_pretrained(output_dir)
+tokenizer.save_pretrained(output_dir)
+
+print("操作完成！")
+```
+
+### 第3步：开始去毒
 
 #### 方式1：聊天模式 (Chat)
 
@@ -39,8 +80,8 @@ pip install -e '.[torch,metrics]'
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli chat \
---model_name_or_path ./model_and_adapter/sft_model \
---adapter_name_or_path ./model_and_adapter/grpo_adapter \
+--model_name_or_path model_and_adpter/sft_model \
+--adapter_name_or_path model_and_adpter/grpo_adapter \
 --template llama3 \
 --finetuning_type lora
 ```
@@ -54,8 +95,8 @@ Please follow these steps: 1.Remove or replace with neutral terms all toxic cont
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
---model_name_or_path ./model_and_adapter/sft_model \
---adapter_name_or_path ./model_and_adapter/grpo_adapter \
+--model_name_or_path model_and_adapter/sft_model \
+--adapter_name_or_path model_and_adapter/grpo_adapter \
 --template llama3 \
 --finetuning_type lora
 ```
@@ -68,7 +109,7 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
 import pandas as pd
 import json
 
-df = pd.read_csv('./data/paradetox_test_671.csv')
+df = pd.read_csv('data/paradetox_test_671.csv')
 alpaca_data = []
 for _, row in df.iterrows():
     data = {
@@ -87,8 +128,8 @@ with open('./data/paratest_671.json', 'w', encoding='utf-8') as f:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python LLaMA-Factory/scripts/vllm_infer.py \
---model_name_or_path ./model_and_adapter/sft_model \
---adapter_name_or_path ./model_and_adapter/grpo_adapter \
+--model_name_or_path sft_model \
+--adapter_name_or_path adapter/grpo_adapter \
 --dataset paratest \
 --dataset_dir LLaMA-Factory/data \
 --template llama3 \
@@ -116,12 +157,12 @@ python clean_jsonl.py -f paratest
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 --stage sft \
 --do_train \
---model_name_or_path ./Llama3-8B-Instruct \
+--model_name_or_path model_and_adpter/Llama3-8B-Instruct \
 --dataset sft_train \
 --dataset_dir ./LLaMA-Factory/data \
 --template llama3 \
 --finetuning_type lora \
---output_dir ./model_and_adapter/sft_adapter \
+--output_dir model_and_adapter/sft_adapter \
 --overwrite_cache \
 --overwrite_output_dir \
 --cutoff_len 1024 \
@@ -151,9 +192,9 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # 模型路径配置
-base_model_name = "./Llama3-8B-Instruct"
-adapter_model_name = "./model_and_adapter/sft_adapter"
-output_dir = "./model_and_adapter/sft_model"
+base_model_name = "model_and_adpter/Llama3-8B-Instruct"
+adapter_model_name = "model_and_adpter/sft_adapter"
+output_dir = "model_and_adpter/sft_model"
 
 # 加载基础模型和tokenizer
 print("正在加载基础模型...")
@@ -192,16 +233,22 @@ tokenizer = AutoTokenizer.from_pretrained("{output_dir}")
 
 **新建虚拟环境 nobug，可使用配套 yml 文件安装**
 
+下载[all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)模型
+
+使用`toxic_bert.py`训练毒性分类器，将训好的模型存为 `model_and_adpter/toxic_bert`
+
+使用以下代码进行grpo训练
+
 ```bash
 conda activate nobug
 
-CUDA_VISIBLE_DEVICES=0 accelerate launch detoxllm/grpo_lora.py \
--m ./model_and_adapter/sft_model \
--o ./model_and_adapter/grpo_lora \
--s ./model_and_adapter/grpo_adapter \
+CUDA_VISIBLE_DEVICES=0 accelerate launch grpo_lora.py \
+-m model_and_adpter/sft_model \
+-o model_and_adpter/grpo_lora \
+-s model_and_adpter/grpo_adapter \
 -t 2.0 \
 -a 5 \
--d ./data/new_grpo_train_para_data.json
+-d data/new_grpo_train_para_data.json
 ```
 
 ---
@@ -217,13 +264,16 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch detoxllm/grpo_lora.py \
 先进行批量推理：
 ```bash
 CUDA_VISIBLE_DEVICES=3 python LLaMA-Factory/scripts/vllm_infer.py \
---model_name_or_path ./model_and_adapter/sft_model \
---adapter_name_or_path ./model_and_adapter/grpo_adapter \
+--model_name_or_path model_and_adapter/sft_model \
+--adapter_name_or_path model_and_adapter/grpo_adapter \
 --dataset paratest \
 --dataset_dir LLaMA-Factory/data \
 --template llama3 \
 --save_name paratest_generated_predictions.jsonl
 ```
+
+下载[wieting similarity](https://storage.yandexcloud.net/nlp/wieting_similarity_data.zip)模型到evaluation_metric
+下载[Cola classifier](https://drive.google.com/drive/folders/1p6_3lCbw3J0MhlidvKkRbG73qwmtWuRp)模型到evaluation_metric
 
 然后清洗格式 + 评分：
 ```bash
@@ -236,9 +286,6 @@ python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 ---
 
 ## 附录
-
-- 毒性分类器
-    - 自定义训练可参考 `toxic_bert.py`，我们训好的模型在 `model_and_adapter/toxic_bert`
 
 - `data` 文件夹说明
     - ```dataset_info.jsom``` LLaMA-Factory/data/dataset_info.json格式范例

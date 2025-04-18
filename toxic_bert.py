@@ -224,7 +224,7 @@ def predict(text, model, tokenizer, max_len=256, device=device):
 if __name__ == "__main__":
     print("开始加载数据...")
     # 加载数据
-    df = pd.read_csv('./data/para_data_classify.csv')  # 确保你的 CSV 文件包含 'text' 和 'label' 两列
+    df = pd.read_csv('data/para_data_classify.csv')  # 确保你的 CSV 文件包含 'text' 和 'label' 两列
     texts = df['text'].tolist()
     labels = df['label'].tolist()
     print("数据加载完成。")
@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
     print("开始初始化模型...")
     model = BertMLPClassifier()
-    model.load_state_dict(torch.load("/root/detoxllm/toxic_bert/toxic_bert.pth"))
+    # model.load_state_dict(torch.load("/root/detoxllm/toxic_bert/toxic_bert.pth"))
     model.to(device)
     print("模型初始化完成。")
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     print("模型训练完成。")
 
     # 保存模型
-    model_path = './model/toxic_bert/toxic_bert.pth'
+    model_path = 'model_and_adpter/toxic_bert/toxic_bert.pth'
     torch.save(trained_model.state_dict(), model_path)
     print(f"模型已保存到 {model_path}")
 
