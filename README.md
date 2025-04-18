@@ -262,7 +262,13 @@ python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 
 ---
 
+## 参考及数据集来源
+
+[Paradetox](https://github.com/s-nlp/paradetox/tree/main)
+[Detoxllm](https://huggingface.co/UBC-NLP/DetoxLLM-7B)
+[Huggingface Dataset](https://huggingface.co/datasets/narySt/text_detoxification_dataset)
+[You Only Prompt Once](https://github.com/xinleihe/toxic-prompt#)
+
 ## 联系我
 
 如有问题或意见，请联系：`1342297988@qq.com`
-
