@@ -1,4 +1,5 @@
-# 社交平台中的文本去毒：语义一致性及模型鲁棒性优化
+# 文本去毒：数据效率，语义一致性及模型鲁棒性优化
+# Text Detoxification: Data Efficiency, Semantic Preservation and Model Generalization
 
 本项目构建了一个基于 LLaMA3 模型的文本去毒系统，目标是提升语义一致性和模型的鲁棒性。系统支持两种使用方式：
 
@@ -301,15 +302,6 @@ python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 
 ---
 
-## 评估结果
-
-![Evaluation](./fig/table1.png)
-![Generalization](./fig/table2.png)
-![Ablation](./fig/table3.png)
-![Casestudy](./fig/table4.png)
-
----
-
 ## 参考及数据集来源
 
 [Paradetox](https://github.com/s-nlp/paradetox/tree/main)
@@ -320,6 +312,3 @@ python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 
 [You Only Prompt Once](https://github.com/xinleihe/toxic-prompt#)
 
-## 联系我
-
-如有问题或意见，请联系：`1342297988@qq.com`
