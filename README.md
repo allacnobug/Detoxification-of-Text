@@ -1,24 +1,23 @@
-# 文本去毒：数据效率，语义一致性及模型鲁棒性优化
 # Text Detoxification: Data Efficiency, Semantic Preservation and Model Generalization
 
-本项目构建了一个基于 LLaMA3 模型的文本去毒系统，目标是提升语义一致性和模型的鲁棒性。系统支持两种使用方式：
+This project builds a text detoxification system based on the LLaMA3 model, aiming to improve semantic consistency and model robustness. The system supports two usage modes:
 
-- 对话交互的 Chat 模式：用户可以直接与模型进行交流，完成个性化的去毒任务
-- 标准化 API/接口模式：支持对大量带毒文本进行批量处理
+- **Chat Mode for Interactive Dialogue**: Users can directly interact with the model to perform personalized detoxification tasks.
+- **Standardized API/Interface Mode**: Supports batch processing of large volumes of toxic texts.
 
 ---
 
-## 如何使用文本去毒系统
+## How to Use the Text Detoxification System
 
-### 第1步：环境配置
+### Step 1: Environment Setup
 
-你需要先做些准备工作：
+You need to prepare the following:
 
-1. (可选) 新建一个供 LLaMA-Factory 使用的 Python 虚拟环境
-2. 安装 LLaMA-Factory 需要的第三方包（可通过 `requirements.txt` 安装）
-3. 安装 LLaMA-Factory 本体，并使系统生成 `llamafactory-cli`
+1. *(Optional)* Create a new Python virtual environment for use with LLaMA-Factory.
+2. Install third-party dependencies required by LLaMA-Factory (via `requirements.txt`).
+3. Install the LLaMA-Factory core and ensure that the `llamafactory-cli` is generated.
 
-可供参考的命令：
+#### Reference Commands
 
 ```bash
 git clone https://github.com/hiyouga/LLaMA-Factory.git
@@ -28,57 +27,57 @@ cd LLaMA-Factory
 pip install -e '.[torch,metrics]'
 ```
 
-详细配置可参考：[文档链接](https://zhuanlan.zhihu.com/p/695287607)
+For detailed configuration, please refer to the [documentation](https://zhuanlan.zhihu.com/p/695287607).
 
-你也可以直接使用我们提供的llama_factory.yml进行环境部署
+You can also directly use the provided `llama_factory.yml` file for environment deployment.
 
 ---
-### 第2步：模型准备
 
-下载[LLaMa3-8B](https://huggingface.co/meta-llama/Meta-Llama-3-8B)到本地```model_and_adpter```文件夹
+### Step 2: Model Preparation
 
-运行以下代码进行合并(在llama_factory环境)
+Download [LLaMA3.1-8B-Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) to the local `model_and_adapter` folder.
+
+Run the following code to merge the model (within the `llama_factory` environment):
 
 ```python
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# 模型路径配置
-base_model_name = "model_and_adpter/Llama3-8B-Instruct"
+# Model path configuration
+base_model_name = "model_and_adpter/Llama3.1-8B-Instruct"
 adapter_model_name = "model_and_adpter/sft_adapter"
 output_dir = "model_and_adpter/sft_model"
 
-# 加载基础模型和tokenizer
-print("正在加载基础模型...")
+# Load base model and tokenizer
+print("Loading base model...")
 model = AutoModelForCausalLM.from_pretrained(
     base_model_name,
     device_map="auto"
 )
 
-print("正在加载tokenizer...")
+print("Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(adapter_model_name)
 
-# 加载适配器
-print("正在合并适配器...")
+# Load adapter
+print("Merging adapter...")
 model = PeftModel.from_pretrained(model, adapter_model_name)
 
-# 合并模型参数
-print("开始模型融合...")
+# Merge model parameters
+print("Merging model weights...")
 model = model.merge_and_unload()
 
-# 保存完整模型
-print(f"保存完整模型到 {output_dir}...")
+# Save the full model
+print(f"Saving full model to {output_dir}...")
 model.save_pretrained(output_dir)
 tokenizer.save_pretrained(output_dir)
 
-print("操作完成！")
+print("Done!")
 ```
+### Step 3: Start Detoxification
 
-### 第3步：开始去毒
+#### Method 1: Chat Mode
 
-#### 方式1：聊天模式 (Chat)
-
-下载模型和适配器，确认路径无误后，运行下面的命令：
+After downloading the model and adapter and verifying the paths, run the following command:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli chat \
@@ -87,13 +86,11 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli chat \
 --template llama3 \
 --finetuning_type lora
 ```
-
-在使用时，请参考我们给出的去毒指令,把括号[...]里的内容替换为需要去毒的句子：
+When using the system, please refer to the detox instruction we provide, and replace the content inside the brackets `[...]` with the sentence you want to detox:
 ```text
 Please follow these steps: 1.Remove or replace with neutral terms all toxic content in this sentence, including attacks, biases, discrimination, insults, hatred, pornography, threats, intimidation, derogatory language, politically sensitive material, or impolite expressions. 2.Delete or rephrase any derogatory terms and disrespectful language. 3.Note: Identify ​all toxic elements in the sentence, which may occur in multiple instances. 4.The rewritten sentence must preserve the original meaning with structurally and tonally similar phrasing. 5.Output only the revised sentence without explanations. Now Detoxify the following sentence, ensuring it contains no harmful content while preserving the original viewpoint and emotional tone:+[toxic sentence]
 ```
-
-**你还可以使用网页聊天模式，只需将 `chat` 替换成 `webchat`：**
+**You can also use the web chat mode by simply replacing `chat` with `webchat`:**
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
@@ -103,9 +100,9 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli webchat \
 --finetuning_type lora
 ```
 
-#### 方式2：批量推理
+#### Method 2: Batch Inference
 
-先准备一个包含 `toxic` 列的 CSV 文件，例如 `paradetox_test_671.csv`，然后进行数据格式转换：
+First, prepare a CSV file containing a `toxic` column, for example, `paradetox_test_671.csv`, then perform data format conversion:
 
 ```python
 import pandas as pd
@@ -125,8 +122,7 @@ for _, row in df.iterrows():
 with open('./data/paratest_671.json', 'w', encoding='utf-8') as f:
     json.dump(alpaca_data, f, ensure_ascii=False, indent=4)
 ```
-
-将结果文件放入 `LLaMA-Factory/data`，并修改 `dataset_info.json`，即可使用下面的命令进行批量去毒：
+Place the result file into `LLaMA-Factory/data` and modify `dataset_info.json`. Then you can use the following command for batch detoxification:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python LLaMA-Factory/scripts/vllm_infer.py \
@@ -137,24 +133,21 @@ CUDA_VISIBLE_DEVICES=0 python LLaMA-Factory/scripts/vllm_infer.py \
 --template llama3 \
 --save_name paratest_generated_predictions.jsonl
 ```
-
-可使用以下脚本进行格式化处理：
+You can use the following script for formatting:
 ```bash
 python clean_jsonl.py -f paratest
 ```
 
 ---
+## How to Reproduce This Project
 
-## 如何复现本项目
+### Step 1: Data Preparation
 
-### 步骤 1：数据准备
+Same as batch inference, but training requires a parallel dataset (you can use the provided `sft_train_para_data.json`).
 
-同批量推理，但训练需要平行数据集（可使用提供的 `sft_train_para_data.json`）
+### Step 2: Cold Start
 
-### 步骤 2：冷启动
-
-先下载 LLaMA3-8B-Instruct 基础模型，然后运行：
-
+First, download the LLaMA3-8B-Instruct base model, then run:
 ```bash
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 --stage sft \
@@ -186,60 +179,31 @@ CUDA_VISIBLE_DEVICES=0 llamafactory-cli train \
 --plot_loss \
 --fp16
 ```
+#### Merge Model
 
-#### 合并模型
-
-```python
-from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-# 模型路径配置
-base_model_name = "model_and_adpter/Llama3-8B-Instruct"
-adapter_model_name = "model_and_adpter/sft_adapter"
-output_dir = "model_and_adpter/sft_model"
-
-# 加载基础模型和tokenizer
-print("正在加载基础模型...")
-model = AutoModelForCausalLM.from_pretrained(
-    base_model_name,
-    device_map="auto"
-)
-
-print("正在加载tokenizer...")
-tokenizer = AutoTokenizer.from_pretrained(adapter_model_name)
-
-# 加载适配器
-print("正在合并适配器...")
-model = PeftModel.from_pretrained(model, adapter_model_name)
-
-# 合并模型参数
-print("开始模型融合...")
-model = model.merge_and_unload()
-
-# 保存完整模型
-print(f"保存完整模型到 {output_dir}...")
-model.save_pretrained(output_dir)
-tokenizer.save_pretrained(output_dir)
-
-print("操作完成！可使用以下代码验证：")
-print(f"""
-from transformers import AutoModelForCausalLM, AutoTokenizer
-model = AutoModelForCausalLM.from_pretrained("{output_dir}")
-tokenizer = AutoTokenizer.from_pretrained("{output_dir}")
-""")
+```bash
+CUDA_VISIBLE_DEVICES=7 llamafactory-cli export \
+--model_name_or_path model_and_adpter/Llama3-8B-Instruct \
+--adapter_name_or_path model_and_adpter/sft_adapter \
+--template llama3 \
+--finetuning_type lora \
+--export_dir model_and_adpter/sft_model \
+--export_size 2 \
+--export_device cpu \
+--export_legacy_format False
 ```
 
 ---
 
-### 步骤 3：GRPO 强化学习
+### Step 3: GRPO Reinforcement Learning
 
-**新建虚拟环境 nobug，可使用配套 yml 文件安装**
+**Create a new virtual environment named `nobug`, and you can install dependencies using the provided YAML file.**
 
-下载[all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)模型
+Download the [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) model.
 
-使用`toxic_bert.py`训练毒性分类器，将训好的模型存为 `model_and_adpter/toxic_bert`
+Use `toxic_bert.py` to train a toxicity classifier and save the trained model to `model_and_adpter/toxic_bert`.
 
-使用以下代码进行grpo训练
+Use the following code to perform GRPO training:
 
 ```bash
 conda activate nobug
@@ -254,16 +218,15 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch grpo_lora.py \
 ```
 
 ---
+### Step 4: Model Evaluation
 
-### 步骤 4：模型评估
+Integrate evaluation metrics from ParadeTox:
+- **STA**: Semantic Preservation
+- **SIM**: Semantic Similarity
+- **FL**: Fluency
+- **J**: Toxicity Classification Accuracy
 
-接入 ParadeTox 中的评估指标：
-- **STA**: 语义保持
-- **SIM**: 语义相似度
-- **FL**: 流畅性
-- **J**: 毒性判断准确性
-
-先进行批量推理：
+First, perform batch inference:
 ```bash
 CUDA_VISIBLE_DEVICES=3 python LLaMA-Factory/scripts/vllm_infer.py \
 --model_name_or_path model_and_adapter/sft_model \
@@ -274,41 +237,41 @@ CUDA_VISIBLE_DEVICES=3 python LLaMA-Factory/scripts/vllm_infer.py \
 --save_name paratest_generated_predictions.jsonl
 ```
 
-下载[wieting similarity](https://storage.yandexcloud.net/nlp/wieting_similarity_data.zip)模型到evaluation_metric
-下载[Cola classifier](https://drive.google.com/drive/folders/1p6_3lCbw3J0MhlidvKkRbG73qwmtWuRp)模型到evaluation_metric
+Download the [wieting similarity](https://storage.yandexcloud.net/nlp/wieting_similarity_data.zip) model to the `evaluation_metric` folder.
 
-然后清洗格式 + 评分：
+Download the [CoLA classifier](https://drive.google.com/drive/folders/1p6_3lCbw3J0MhlidvKkRbG73qwmtWuRp) model to the `evaluation_metric` folder.
+
+Then perform data cleaning and scoring:
 ```bash
 python clean_jsonl.py -f paratest
 python evaluation_detox/metric.py -i paratest_generated_predictions.csv
 ```
 
-结果会保存到 `metric_results.md`
+The results will be saved to `metric_results.md`.
 
 ---
 
-## 附录
+## Appendix
 
-- `data` 文件夹说明
-    - ```dataset_info.jsom``` LLaMA-Factory/data/dataset_info.json格式范例
-    - ```detoxtest.json``` 从DetoxLLM中过滤得到的测试集
-    - ```hugtest.json``` 来自Huggingface平台的数据集
-    - ```paratest_671.json``` ParaDetox测试集
-    - ```sft_train_para_data.json``` 用于冷启动的数据集
-    - ```para_data_classify.csv``` 用于训练毒性分类器的数据集
-    - ```paradetox_test_671.csv``` 测试集文件
-    - ```train_para_data.csv``` 训练集文件
-    - ```new_grpo_train_para_data.json``` grpo训练文件
+- Explanation of the `data` folder:
+    - `dataset_info.json`: An example format of LLaMA-Factory/data/dataset_info.json
+    - `detoxtest.json`: Test set filtered from DetoxLLM
+    - `hugtest.json`: Dataset from the Huggingface platform
+    - `paratest_671.json`: ParaDetox test set
+    - `sft_train_para_data.json`: Dataset used for cold start
+    - `para_data_classify.csv`: Dataset used for training the toxicity classifier
+    - `paradetox_test_671.csv`: Test set file
+    - `train_para_data.csv`: Training set file
+    - `new_grpo_train_para_data.json`: GRPO training file
 
 ---
 
-## 参考及数据集来源
+## References and Dataset Sources
 
 [Paradetox](https://github.com/s-nlp/paradetox/tree/main)
 
-[Detoxllm](https://huggingface.co/UBC-NLP/DetoxLLM-7B)
+[DetoxLLM](https://huggingface.co/UBC-NLP/DetoxLLM-7B)
 
 [Huggingface Dataset](https://huggingface.co/datasets/narySt/text_detoxification_dataset)
 
 [You Only Prompt Once](https://github.com/xinleihe/toxic-prompt#)
-
