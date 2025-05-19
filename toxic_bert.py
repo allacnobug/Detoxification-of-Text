@@ -8,7 +8,6 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 
-# 超参数
 maxlen = 256
 batch_size = 16
 epochs = 5
